@@ -2,10 +2,12 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, existsSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 
-const script = join(import.meta.dirname, "..", "scripts", "postinstall.js");
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const script = join(__dirname, "..", "scripts", "postinstall.js");
 
 function makeHome() {
   const root = mkdtempSync(join(tmpdir(), "tmux-ide-postinstall-test-"));

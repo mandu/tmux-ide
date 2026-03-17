@@ -2,10 +2,12 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 
-const cli = join(import.meta.dirname, "..", "bin", "cli.js");
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const cli = join(__dirname, "..", "bin", "cli.js");
 
 function makeProject(config = "name: test-session\nrows:\n  - panes:\n      - title: Shell\n") {
   const dir = mkdtempSync(join(tmpdir(), "tmux-ide-cli-test-"));

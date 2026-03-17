@@ -1,6 +1,8 @@
-import { existsSync, readFileSync } from "node:fs";
-import { resolve, basename } from "node:path";
-import { writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { resolve, basename, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 import { detectStack, suggestConfig } from "./detect.js";
 import { outputError, printLayout } from "./lib/output.js";
 
@@ -14,7 +16,7 @@ export async function init({ template, json } = {}) {
 
   // If a specific template is requested, use it
   if (template) {
-    const templatePath = resolve(import.meta.dirname, "..", "templates", `${template}.yml`);
+    const templatePath = resolve(__dirname, "..", "templates", `${template}.yml`);
     if (!existsSync(templatePath)) {
       outputError(
         json
@@ -60,7 +62,7 @@ export async function init({ template, json } = {}) {
     }
   } else {
     // Fallback to default template
-    const templatePath = resolve(import.meta.dirname, "..", "templates", "default.yml");
+    const templatePath = resolve(__dirname, "..", "templates", "default.yml");
     let content = readFileSync(templatePath, "utf-8");
     content = content.replace(/^name: .+/m, `name: ${name}`);
     writeFileSync(configPath, content);

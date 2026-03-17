@@ -2,7 +2,8 @@ import { describe, it, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { execSync, execFileSync } from "node:child_process";
 import { existsSync, mkdtempSync, writeFileSync, rmSync } from "node:fs";
-import { join } from "node:path";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { tmpdir } from "node:os";
 import { launch } from "./launch.js";
 import { restart } from "./restart.js";
@@ -29,7 +30,8 @@ describe(
   () => {
     let tmpDir;
     const session = "tmux-ide-test-integration";
-    const cli = join(import.meta.dirname, "..", "bin", "cli.js");
+    const __dirname = dirname(fileURLToPath(import.meta.url));
+    const cli = join(__dirname, "..", "bin", "cli.js");
 
     function run(args) {
       return execFileSync("node", [cli, ...args], { cwd: tmpDir, encoding: "utf-8" });
