@@ -173,7 +173,14 @@ export async function launch(
     attach = true,
     newInstance = false,
     sessionOverride,
-  }: { json?: boolean; attach?: boolean; newInstance?: boolean; sessionOverride?: string } = {},
+    input,
+  }: {
+    json?: boolean;
+    attach?: boolean;
+    newInstance?: boolean;
+    sessionOverride?: string;
+    input?: string;
+  } = {},
 ): Promise<void> {
   const dir = resolve(targetDir ?? ".");
   const config = loadLaunchConfig(dir);
@@ -200,6 +207,12 @@ export async function launch(
       console.log(`Run "tmux-ide restart" to apply changes.`);
     } else {
       console.log(`Session "${session}" is already running. Attaching...`);
+    }
+
+    if (input && !json) {
+      console.log(
+        `Note: --input is ignored for already-running sessions. Use "tmux-ide restart --input" instead.`,
+      );
     }
 
     if (attach) {
@@ -265,11 +278,38 @@ export async function launch(
   // Focus the correct pane
   selectPane(focusPane);
 
+  // Send initial input to the focused pane
+  if (input) {
+    const focusPaneConfig =
+      rows.flatMap((r) => r.panes ?? []).find((p) => p.focus) ?? rows[0]?.panes?.[0];
+
+    if (focusPaneConfig?.command) {
+      const ready = waitForPaneCommand(focusPane, [focusPaneConfig.command], {
+        attempts: 30,
+        delayMs: 200,
+      });
+      if (!ready && !json) {
+        console.warn(
+          `Warning: focused pane command "${focusPaneConfig.command}" may not be ready yet.`,
+        );
+      }
+    }
+
+    sendLiteral(focusPane, input);
+  }
+
   // Launch summary
   const totalPanes = rows.reduce((sum, r) => sum + (r.panes?.length ?? 0), 0);
-  console.log(
-    `Starting "${session}" (${rows.length} row${rows.length === 1 ? "" : "s"}, ${totalPanes} pane${totalPanes === 1 ? "" : "s"})...`,
-  );
+
+  if (json) {
+    console.log(
+      JSON.stringify({ session, started: true, panes: totalPanes, inputSent: Boolean(input) }),
+    );
+  } else {
+    console.log(
+      `Starting "${session}" (${rows.length} row${rows.length === 1 ? "" : "s"}, ${totalPanes} pane${totalPanes === 1 ? "" : "s"})...`,
+    );
+  }
 
   // Attach
   if (attach) {

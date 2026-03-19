@@ -30,6 +30,9 @@ const { positionals, values } = parseArgs({
     template: { type: "string" },
     name: { type: "string" },
     new: { type: "boolean" },
+    input: { type: "string" },
+    background: { type: "boolean" },
+    detached: { type: "boolean" },
     session: { type: "string" },
     all: { type: "boolean" },
     filter: { type: "boolean" },
@@ -73,6 +76,8 @@ const command = hasKnownCommand ? firstPositional : "start";
 const startTargetDir = hasKnownCommand ? positionals[1] : firstPositional;
 const json = values.json ?? false;
 
+const background = values.background || values.detached;
+
 const noColor = "NO_COLOR" in process.env;
 const bold = (s) => (noColor ? s : `\x1b[1m${s}\x1b[22m`);
 const cyan = (s) => (noColor ? s : `\x1b[36m${s}\x1b[39m`);
@@ -111,6 +116,8 @@ ${bold("Usage:")}
 ${bold("Flags:")}
   ${cyan("--json")}                      ${dim("Output as JSON (all commands)")}
   ${cyan("--new")}                       ${dim("Launch a new parallel session instance")}
+  ${cyan("--input <text>")}              ${dim("Send text to the focused pane after launch")}
+  ${cyan("--background, --detached")}    ${dim("Launch without attaching (run in background)")}
   ${cyan("--session <name>")}            ${dim("Target a specific session (stop/attach/status/restart/inspect)")}
   ${cyan("--all")}                       ${dim("Stop all instances of this project's session")}
   ${cyan("--filter")}                    ${dim("Filter ls output to this project's sessions")}
@@ -124,7 +131,12 @@ ${bold("Flags:")}
 try {
   switch (command) {
     case "start":
-      await launch(startTargetDir, { json, newInstance: values.new });
+      await launch(startTargetDir, {
+        json,
+        newInstance: values.new,
+        ...(background ? { attach: false } : {}),
+        input: values.input,
+      });
       break;
 
     case "init":
@@ -140,7 +152,12 @@ try {
       break;
 
     case "restart":
-      await restart(positionals[1], { json, session: values.session });
+      await restart(positionals[1], {
+        json,
+        session: values.session,
+        ...(background ? { attach: false } : {}),
+        input: values.input,
+      });
       break;
 
     case "ls":
