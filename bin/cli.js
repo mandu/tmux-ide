@@ -116,7 +116,7 @@ ${bold("Usage:")}
 ${bold("Flags:")}
   ${cyan("--json")}                      ${dim("Output as JSON (all commands)")}
   ${cyan("--new")}                       ${dim("Launch a new parallel session instance")}
-  ${cyan("--input <text>")}              ${dim("Send text to the focused pane after launch")}
+  ${cyan("--input <text>")}              ${dim("Pass prompt to the focused pane's claude command")}
   ${cyan("--background, --detached")}    ${dim("Launch without attaching (run in background)")}
   ${cyan("--session <name>")}            ${dim("Target a specific session (stop/attach/status/restart/inspect)")}
   ${cyan("--all")}                       ${dim("Stop all instances of this project's session")}

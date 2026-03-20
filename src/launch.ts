@@ -242,6 +242,23 @@ export async function launch(
 
   const { focusPane, paneActions } = collectPaneStartupPlan(rows, paneMap, firstPanesOfRows, dir);
 
+  // Append --input text to the focused pane's claude command
+  let inputAppended = false;
+  if (input) {
+    const focusAction = paneActions.find((a) => a.targetPane === focusPane);
+    const baseCmd = focusAction?.command?.trim().split(/\s+/)[0] ?? "";
+
+    if (baseCmd === "claude") {
+      const escaped = input.replace(/'/g, "'\\''");
+      focusAction!.command = `${focusAction!.command} '${escaped}'`;
+      inputAppended = true;
+    } else if (!json) {
+      console.warn(
+        `Warning: --input is only supported when the focused pane runs "claude" (found "${focusAction?.command ?? "no command"}"). Ignoring --input.`,
+      );
+    }
+  }
+
   for (const action of paneActions) {
     if (action.title) {
       setPaneTitle(action.targetPane, action.title);
@@ -278,32 +295,12 @@ export async function launch(
   // Focus the correct pane
   selectPane(focusPane);
 
-  // Send initial input to the focused pane
-  if (input) {
-    const focusPaneConfig =
-      rows.flatMap((r) => r.panes ?? []).find((p) => p.focus) ?? rows[0]?.panes?.[0];
-
-    if (focusPaneConfig?.command) {
-      const ready = waitForPaneCommand(focusPane, [focusPaneConfig.command], {
-        attempts: 30,
-        delayMs: 200,
-      });
-      if (!ready && !json) {
-        console.warn(
-          `Warning: focused pane command "${focusPaneConfig.command}" may not be ready yet.`,
-        );
-      }
-    }
-
-    sendLiteral(focusPane, input);
-  }
-
   // Launch summary
   const totalPanes = rows.reduce((sum, r) => sum + (r.panes?.length ?? 0), 0);
 
   if (json) {
     console.log(
-      JSON.stringify({ session, started: true, panes: totalPanes, inputSent: Boolean(input) }),
+      JSON.stringify({ session, started: true, panes: totalPanes, inputSent: inputAppended }),
     );
   } else {
     console.log(
