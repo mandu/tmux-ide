@@ -173,7 +173,14 @@ export async function launch(
     attach = true,
     newInstance = false,
     sessionOverride,
-  }: { json?: boolean; attach?: boolean; newInstance?: boolean; sessionOverride?: string } = {},
+    input,
+  }: {
+    json?: boolean;
+    attach?: boolean;
+    newInstance?: boolean;
+    sessionOverride?: string;
+    input?: string;
+  } = {},
 ): Promise<void> {
   const dir = resolve(targetDir ?? ".");
   const config = loadLaunchConfig(dir);
@@ -202,6 +209,12 @@ export async function launch(
       console.log(`Session "${session}" is already running. Attaching...`);
     }
 
+    if (input && !json) {
+      console.log(
+        `Note: --input is ignored for already-running sessions. Use "tmux-ide restart --input" instead.`,
+      );
+    }
+
     if (attach) {
       attachSession(session);
     }
@@ -228,6 +241,23 @@ export async function launch(
   );
 
   const { focusPane, paneActions } = collectPaneStartupPlan(rows, paneMap, firstPanesOfRows, dir);
+
+  // Append --input text to the focused pane's claude command
+  let inputAppended = false;
+  if (input) {
+    const focusAction = paneActions.find((a) => a.targetPane === focusPane);
+    const baseCmd = focusAction?.command?.trim().split(/\s+/)[0] ?? "";
+
+    if (baseCmd === "claude") {
+      const escaped = input.replace(/'/g, "'\\''");
+      focusAction!.command = `${focusAction!.command} '${escaped}'`;
+      inputAppended = true;
+    } else if (!json) {
+      console.warn(
+        `Warning: --input is only supported when the focused pane runs "claude" (found "${focusAction?.command ?? "no command"}"). Ignoring --input.`,
+      );
+    }
+  }
 
   for (const action of paneActions) {
     if (action.title) {
@@ -267,9 +297,16 @@ export async function launch(
 
   // Launch summary
   const totalPanes = rows.reduce((sum, r) => sum + (r.panes?.length ?? 0), 0);
-  console.log(
-    `Starting "${session}" (${rows.length} row${rows.length === 1 ? "" : "s"}, ${totalPanes} pane${totalPanes === 1 ? "" : "s"})...`,
-  );
+
+  if (json) {
+    console.log(
+      JSON.stringify({ session, started: true, panes: totalPanes, inputSent: inputAppended }),
+    );
+  } else {
+    console.log(
+      `Starting "${session}" (${rows.length} row${rows.length === 1 ? "" : "s"}, ${totalPanes} pane${totalPanes === 1 ? "" : "s"})...`,
+    );
+  }
 
   // Attach
   if (attach) {

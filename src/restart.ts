@@ -8,8 +8,9 @@ export async function restart(
   {
     json,
     attach,
+    input,
     session: targetSession,
-  }: { json?: boolean; attach?: boolean; session?: string } = {},
+  }: { json?: boolean; attach?: boolean; input?: string; session?: string } = {},
 ): Promise<void> {
   const dir = resolve(targetDir ?? ".");
   const session = targetSession ?? getSessionName(dir).name;
@@ -23,5 +24,5 @@ export async function restart(
 
   // If restarting a specific (possibly suffixed) session, pass sessionOverride
   // so launch re-creates it with the same name instead of the base name.
-  await launch(dir, { json, attach, sessionOverride: targetSession });
+  await launch(dir, { json, attach, input, sessionOverride: targetSession });
 }

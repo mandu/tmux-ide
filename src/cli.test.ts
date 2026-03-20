@@ -70,6 +70,14 @@ describe("cli contract regressions", () => {
     assert.match(result.stdout, /tmux-ide inspect/);
   });
 
+  it("includes --input and --background in the CLI help output", () => {
+    const result = runCli(["--help"]);
+
+    assert.strictEqual(result.status, 0);
+    assert.match(result.stdout, /--input <text>/);
+    assert.match(result.stdout, /--background, --detached/);
+  });
+
   it("returns the full non-running status json shape", () => {
     const dir = makeProject();
 
